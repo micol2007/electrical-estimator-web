@@ -28,7 +28,7 @@ const SELECTABLE_SIZES = [100, 200, 400, 600, 800];
 const getServiceSize = (a) => SERVICE_SIZES.find((s) => a <= s) || 2000;
 const calcKVA = (sqft, w) => (Number(sqft) * Number(w)) / 1000;
 const calcAmps = (kva, f) => (kva > 0 ? kva / f : 0);
-const TAP_CAN_IN = 30;
+const DEFAULT_TAP_CAN_IN = 30;
 const POST_TAP_GAP = 6; // 6" gap between tap can and first disconnect
 
 const DEFAULT_WIREWAY_RULES = [
@@ -237,7 +237,7 @@ function ConfirmInline({ message, onConfirm, onCancel }) {
 }
 
 // ─── Wireway Diagram ──────────────────────────────────────────────────────────
-function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps }) {
+function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tapCanIn }) {
   const bp = useBreakpoint();
   const ok = availFt > 0 && totalFt <= availFt;
   const W = bp.mobile ? 400 : bp.tablet ? 560 : 700;
@@ -266,7 +266,7 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps }) {
     }
   });
 
-  const tapW = TAP_CAN_IN * scale;
+  const tapW = tapCanIn * scale;
   const chanW = tx;
   const totalDrawW = tapW + chanW;
 
@@ -288,7 +288,7 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps }) {
   const TAP_X = PAD;
   const CHAN_X = TAP_X + tapW;
   // Gutter length = total inches of all services (without tap can and initial gap)
-  const gutterIn = totalIn - TAP_CAN_IN - POST_TAP_GAP;
+  const gutterIn = totalIn - tapCanIn - POST_TAP_GAP;
   const gutterFt = (gutterIn / 12);
 
   return (
@@ -302,7 +302,7 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps }) {
         <text x={TAP_X + tapW / 2} y={TAP_Y2 + TAP_H / 2 - 6}
           fill={C.purple} fontSize={9} fontWeight="bold" textAnchor="middle">TAP CAN</text>
         <text x={TAP_X + tapW / 2} y={TAP_Y2 + TAP_H / 2 + 8}
-          fill={C.purple} fontSize={7} textAnchor="middle" opacity={0.8}>{TAP_CAN_IN}"</text>
+          fill={C.purple} fontSize={7} textAnchor="middle" opacity={0.8}>{tapCanIn}"</text>
 
         {/* ── Connection: tap can → metering gutter ── */}
         <line x1={TAP_X + tapW} y1={CHAN_Y + CHAN_H / 2}
@@ -722,7 +722,7 @@ function TenantRow({ t, computed, catMap, categories, updateTenant, removeTenant
 }
 
 // ─── Wireway Rules Card (view/edit pattern) ──────────────────────────────────
-function WirewayRulesCard({ wirewayRules, setWirewayRules }) {
+function WirewayRulesCard({ wirewayRules, setWirewayRules, tapCanIn, setTapCanIn }) {
   const [editing, setEditing] = useState(false);
 
   const updateRule = (id, field, value) =>
@@ -794,15 +794,31 @@ function WirewayRulesCard({ wirewayRules, setWirewayRules }) {
                 </tr>
               );
             })}
-            {/* Tap Can row — always read-only */}
+            {/* Tap Can row */}
             <tr>
               <td style={{ ...S.td, color: C.amber, fontWeight: "bold" }}>Tap Can</td>
-              <td style={{ ...S.td, color: C.muted }}>Fixed at start</td>
-              <td style={{ ...S.td, color: C.muted }}>—</td>
-              <td style={{ ...S.td, color: C.muted }}>—</td>
-              <td style={{ ...S.td, color: C.muted }}>—</td>
-              <td style={{ ...S.td, color: C.muted }}>—</td>
-              <td style={{ ...S.td, color: C.amber, fontWeight: "bold" }}>{TAP_CAN_IN}"</td>
+              {editing ? (
+                <>
+                  <td style={S.td}>Fixed at start</td>
+                  <td style={S.td}>—</td>
+                  <td style={S.td}>—</td>
+                  <td style={S.td}>—</td>
+                  <td style={S.td}>—</td>
+                  <td style={S.td}>
+                    <input style={{ ...S.inp, width: 50 }} type="number" value={tapCanIn}
+                      onChange={(e) => setTapCanIn(Number(e.target.value))} />
+                  </td>
+                </>
+              ) : (
+                <>
+                  <td style={{ ...S.td, color: C.muted }}>Fixed at start</td>
+                  <td style={{ ...S.td, color: C.muted }}>—</td>
+                  <td style={{ ...S.td, color: C.muted }}>—</td>
+                  <td style={{ ...S.td, color: C.muted }}>—</td>
+                  <td style={{ ...S.td, color: C.muted }}>—</td>
+                  <td style={{ ...S.td, color: C.amber, fontWeight: "bold" }}>{tapCanIn}"</td>
+                </>
+              )}
             </tr>
           </tbody>
         </table>
@@ -820,6 +836,7 @@ export default function App() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES.map((c) => ({ ...c, id: uid() })));
   const [tenants, setTenants] = useState([{ ...blankTenant(1, "House Panel"), name: "House Panel", fixedKVA: "10" }]);
   const [wireway, setWireway] = useState(BLANK_WIREWAY);
+  const [tapCanIn, setTapCanIn] = useState(DEFAULT_TAP_CAN_IN);
   const [wirewayRules, setWirewayRules] = useState(DEFAULT_WIREWAY_RULES.map((r) => ({ ...r })));
   const fileRef = useRef();
   const bp = useBreakpoint();
@@ -872,14 +889,14 @@ export default function App() {
       return 0;
     });
     const tenantsIn = slots.reduce((s, t) => s + t.slot.totalIn, 0);
-    const totalIn = TAP_CAN_IN + POST_TAP_GAP + tenantsIn;
+    const totalIn = tapCanIn + POST_TAP_GAP + tenantsIn;
     const totalFt = totalIn / 12;
     const availFt = Number(wireway.availableWallFeet) || 0;
     return {
       tenantSlots: slots, tenantsIn, totalIn, totalFt, availFt,
       ok: availFt > 0 && totalFt <= availFt
     };
-  }, [computed, wireway]);
+  }, [computed, wireway, tapCanIn]);
 
   // ── Download helper (works in sandboxed iframes) ──
   const downloadRef = useRef();
@@ -899,7 +916,7 @@ export default function App() {
       project, voltage, hpVoltage,
       categories: categories.map(({ id, ...r }) => r),
       tenants: tenants.map(({ id, ...r }) => r),
-      wireway, wirewayRules: wirewayRules.map(({ id, ...r }) => r),
+      wireway, tapCanIn, wirewayRules: wirewayRules.map(({ id, ...r }) => r),
       savedAt: new Date().toISOString()
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
@@ -926,7 +943,7 @@ export default function App() {
       [], ["WIREWAY PER BUILDING"],
       ...allBuildings.flatMap((b) => {
         const bw = buildingWireway(b);
-        return [[`Building ${b}`], ["Tap Can", TAP_CAN_IN + '"'], ["Gap (tap→disc)", POST_TAP_GAP + '"'],
+        return [[`Building ${b}`], ["Tap Can", tapCanIn + '"'], ["Gap (tap→disc)", POST_TAP_GAP + '"'],
         ...bw.tenantSlots.map((t) => [t.name || t.category, t.serviceSize + "A", t.slot.type, t.slot.totalIn + '"']),
         ["Total (in)", bw.totalIn, "Total (ft)", +bw.totalFt.toFixed(4)],
         ["Available (ft)", bw.availFt, "Status", bw.ok ? "OK" : "EXCEEDS"], []];
@@ -950,6 +967,7 @@ export default function App() {
         if (d.categories) setCategories(d.categories.map((c) => ({ ...c, id: uid() })));
         if (d.tenants) setTenants(d.tenants.map((t) => ({ ...t, id: uid() })));
         if (d.wireway) setWireway(d.wireway);
+        if (d.tapCanIn !== undefined) setTapCanIn(d.tapCanIn);
         if (d.wirewayRules) setWirewayRules(d.wirewayRules.map((r) => ({ ...r, id: uid() })));
         setScreen("editor");
       } catch { /* silent */ }
@@ -1098,6 +1116,7 @@ export default function App() {
             onClick={() => {
               setProject(BLANK_PROJECT); setCategories(DEFAULT_CATEGORIES.map((c) => ({ ...c, id: uid() })));
               setTenants([{ ...blankTenant(1, "House Panel"), name: "House Panel", fixedKVA: "10" }]); setWireway(BLANK_WIREWAY);
+              setTapCanIn(DEFAULT_TAP_CAN_IN);
               setWirewayRules(DEFAULT_WIREWAY_RULES.map((r) => ({ ...r })));
               setVoltage({ label: "120/208V", factor: 0.360 }); setHpVoltage({ label: "480/277V", factor: 0.831 });
               setScreen("editor");
@@ -1204,7 +1223,7 @@ export default function App() {
         </>)}
 
         {screen === "wireway" && (<>
-          <WirewayRulesCard wirewayRules={wirewayRules} setWirewayRules={setWirewayRules} />
+          <WirewayRulesCard wirewayRules={wirewayRules} setWirewayRules={setWirewayRules} tapCanIn={tapCanIn} setTapCanIn={setTapCanIn} />
 
           {allBuildings.map((b) => {
             const bw = buildingWireway(b);
@@ -1285,7 +1304,7 @@ export default function App() {
                 </div>
                 <WirewayDiagram tenantSlots={bw.tenantSlots} totalIn={bw.totalIn}
                   totalFt={bw.totalFt} availFt={bw.availFt}
-                  totalAmps={bw.tenantSlots.reduce((s, t) => s + (t.amps || 0), 0)} />
+                  totalAmps={bw.tenantSlots.reduce((s, t) => s + (t.amps || 0), 0)} tapCanIn={tapCanIn} />
               </div>
             );
           })}
@@ -1357,7 +1376,7 @@ export default function App() {
                 {/* Wireway diagram */}
                 <WirewayDiagram tenantSlots={bw.tenantSlots} totalIn={bw.totalIn}
                   totalFt={bw.totalFt} availFt={bw.availFt}
-                  totalAmps={bw.tenantSlots.reduce((s, t) => s + (t.amps || 0), 0)} />
+                  totalAmps={bw.tenantSlots.reduce((s, t) => s + (t.amps || 0), 0)} tapCanIn={tapCanIn} />
               </div>
             );
           })}
