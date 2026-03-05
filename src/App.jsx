@@ -467,7 +467,7 @@ const slotPill = (slot) => {
 };
 
 // ─── Print Cover Sheet ────────────────────────────────────────────────────────
-function PrintCover({ project, voltage, hpVoltage, totalKVA, totalAmps, buildingCount }) {
+function PrintCover({ project, voltage, totalKVA, totalAmps, buildingCount }) {
   return (
     <div data-print-only style={{ display: "none", pageBreakAfter: "always", padding: 40, textAlign: "center" }}>
       <div style={{ fontSize: 36, marginBottom: 20 }}>⚡</div>
@@ -477,8 +477,7 @@ function PrintCover({ project, voltage, hpVoltage, totalKVA, totalAmps, building
         <tbody>
           {[
             ["Project #", project.number || "—"], ["Buildings", buildingCount],
-            ["Tenant Voltage", `${voltage.label} (÷ ${voltage.factor})`],
-            ["House Panel Voltage", `${hpVoltage.label} (÷ ${hpVoltage.factor})`],
+            ["Global Voltage", `${voltage.label} (÷ ${voltage.factor})`],
             ["Total KVA", totalKVA.toFixed(2)], ["Total Amps", totalAmps.toFixed(2)],
           ].map(([k, v], i) => (
             <tr key={i}>
@@ -508,7 +507,7 @@ const editBtn = (editing) => ({
 });
 
 // ─── Settings Panel ───────────────────────────────────────────────────────────
-function SettingsPanel({ voltage, setVoltage, hpVoltage, setHpVoltage, categories, setCategories, tenants, setTenants }) {
+function SettingsPanel({ voltage, setVoltage, categories, setCategories, tenants, setTenants }) {
   const bp = useBreakpoint();
   const [editVolt, setEditVolt] = useState(false);
   const [editCats, setEditCats] = useState(false);
@@ -551,7 +550,7 @@ function SettingsPanel({ voltage, setVoltage, hpVoltage, setHpVoltage, categorie
 
         <div style={S.rg2(bp.mobile)}>
           <div>
-            <label style={S.lbl}>Tenant Voltage</label>
+            <label style={S.lbl}>Global Voltage</label>
             <VButtons v={voltage} setV={setVoltage} />
             <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
               <span style={readMuted}>factor:</span>
@@ -559,17 +558,6 @@ function SettingsPanel({ voltage, setVoltage, hpVoltage, setHpVoltage, categorie
                 ? <input style={{ ...S.inp, width: 80 }} type="number" step="0.001" value={voltage.factor}
                   onChange={(e) => setVoltage({ label: "Custom", factor: Number(e.target.value) })} />
                 : <span style={readVal}>{voltage.factor}</span>}
-            </div>
-          </div>
-          <div>
-            <label style={S.lbl}>House Panel Voltage</label>
-            <VButtons v={hpVoltage} setV={setHpVoltage} />
-            <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
-              <span style={readMuted}>factor:</span>
-              {editVolt
-                ? <input style={{ ...S.inp, width: 80 }} type="number" step="0.001" value={hpVoltage.factor}
-                  onChange={(e) => setHpVoltage({ label: "Custom", factor: Number(e.target.value) })} />
-                : <span style={readVal}>{hpVoltage.factor}</span>}
             </div>
           </div>
         </div>
@@ -832,7 +820,6 @@ export default function App() {
   const [screen, setScreen] = useState("home");
   const [project, setProject] = useState(BLANK_PROJECT);
   const [voltage, setVoltage] = useState({ label: "120/208V", factor: 0.360 });
-  const [hpVoltage, setHpVoltage] = useState({ label: "480/277V", factor: 0.831 });
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES.map((c) => ({ ...c, id: uid() })));
   const [tenants, setTenants] = useState([{ ...blankTenant(1, "House Panel"), name: "House Panel", fixedKVA: "10" }]);
   const [wireway, setWireway] = useState(BLANK_WIREWAY);
@@ -855,13 +842,13 @@ export default function App() {
     tenants.map((t) => {
       const cat = catMap[t.category] || {};
       const isHP = !!cat.isHousePanel;
-      const factor = isHP ? hpVoltage.factor : voltage.factor;
+      const factor = voltage.factor;
       const kva = isHP && t.fixedKVA !== "" ? Number(t.fixedKVA) : calcKVA(t.sqft, cat.wattsPerSqft);
       const amps = calcAmps(kva, factor);
       const autoSvcSz = getServiceSize(amps);
       const svcSz = t.serviceOverride ? Number(t.serviceOverride) : autoSvcSz;
       return { ...t, isHP, factor, kva, amps, autoServiceSize: autoSvcSz, serviceSize: svcSz, slot: getSlot(svcSz, wirewayRules) };
-    }), [tenants, catMap, voltage.factor, hpVoltage.factor, wirewayRules]);
+    }), [tenants, catMap, voltage.factor, wirewayRules]);
 
   const totalKVA = computed.reduce((s, t) => s + t.kva, 0);
   const totalAmps = totalKVA / voltage.factor;
@@ -913,7 +900,7 @@ export default function App() {
 
   const handleSave = useCallback(() => {
     const data = {
-      project, voltage, hpVoltage,
+      project, voltage,
       categories: categories.map(({ id, ...r }) => r),
       tenants: tenants.map(({ id, ...r }) => r),
       wireway, tapCanIn, wirewayRules: wirewayRules.map(({ id, ...r }) => r),
@@ -921,15 +908,14 @@ export default function App() {
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     triggerDownload(blob, `${project.name || "estimate"}_${project.number || "v1"}.json`);
-  }, [project, voltage, hpVoltage, categories, tenants, wireway, wirewayRules, triggerDownload]);
+  }, [project, voltage, categories, tenants, wireway, tapCanIn, wirewayRules, triggerDownload]);
 
   const handleExcel = useCallback(() => {
     const wb = XLSX.utils.book_new();
     const rows = [
       ["ELECTRICAL ESTIMATE"],
       ["Project", project.name, "Number", project.number],
-      ["Tenant Voltage", voltage.label, "Factor", voltage.factor],
-      ["House Panel Voltage", hpVoltage.label, "Factor", hpVoltage.factor],
+      ["Global Voltage", voltage.label, "Factor", voltage.factor],
       [],
       ["Building", "Tenant", "Category", "S.F.", "W/sqft", "KVA", "Amps", "Service Size", "Wireway Type", "Wireway (in)"],
       ...computed.map((t) => [t.building, t.name, t.category, t.isHP ? "—" : (t.sqft || 0),
@@ -953,7 +939,7 @@ export default function App() {
     const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     triggerDownload(blob, `${project.name || "estimate"}_${project.number || "v1"}.xlsx`);
-  }, [project, voltage, hpVoltage, computed, catMap, catSummary, totalKVA, totalAmps, allBuildings, buildingWireway, triggerDownload]);
+  }, [project, voltage, computed, catMap, catSummary, totalKVA, totalAmps, allBuildings, buildingWireway, tapCanIn, triggerDownload]);
 
   const handleLoad = (e) => {
     const file = e.target.files[0]; if (!file) return;
@@ -963,7 +949,6 @@ export default function App() {
         const d = JSON.parse(ev.target.result);
         if (d.project) setProject(d.project);
         if (d.voltage) setVoltage(d.voltage);
-        if (d.hpVoltage) setHpVoltage(d.hpVoltage);
         if (d.categories) setCategories(d.categories.map((c) => ({ ...c, id: uid() })));
         if (d.tenants) setTenants(d.tenants.map((t) => ({ ...t, id: uid() })));
         if (d.wireway) setWireway(d.wireway);
@@ -1025,8 +1010,7 @@ export default function App() {
 
       // Voltage system info
       html += '<div class="stat-row">';
-      html += '<div class="stat"><div class="stat-lbl">TENANT VOLTAGE</div><div class="stat-val" style="font-size:14px">' + voltage.label + '</div></div>';
-      html += '<div class="stat"><div class="stat-lbl">HOUSE PANEL VOLTAGE</div><div class="stat-val" style="font-size:14px">' + hpVoltage.label + '</div></div>';
+      html += '<div class="stat"><div class="stat-lbl">GLOBAL VOLTAGE</div><div class="stat-val" style="font-size:14px">' + voltage.label + '</div></div>';
       html += '</div>';
 
       // Building tables
@@ -1088,7 +1072,7 @@ export default function App() {
 
       document.body.removeChild(printRoot);
     }, 100);
-  }, [project, voltage, hpVoltage, totalKVA, totalAmps, allBuildings, computed, buildingWireway, catMap, catSummary]);
+  }, [project, voltage, totalKVA, totalAmps, allBuildings, computed, buildingWireway, catMap, catSummary]);
 
   const updateTenant = useCallback((id, f, v) => setTenants((p) => p.map((t) => (t.id === id ? { ...t, [f]: v } : t))), []);
   const removeTenant = useCallback((id) => setTenants((p) => p.filter((t) => t.id !== id)), []);
@@ -1118,7 +1102,7 @@ export default function App() {
               setTenants([{ ...blankTenant(1, "House Panel"), name: "House Panel", fixedKVA: "10" }]); setWireway(BLANK_WIREWAY);
               setTapCanIn(DEFAULT_TAP_CAN_IN);
               setWirewayRules(DEFAULT_WIREWAY_RULES.map((r) => ({ ...r })));
-              setVoltage({ label: "120/208V", factor: 0.360 }); setHpVoltage({ label: "480/277V", factor: 0.831 });
+              setVoltage({ label: "120/208V", factor: 0.360 });
               setScreen("editor");
             }}>
             <div style={{ fontSize: 30, marginBottom: 10 }}>📋</div>
@@ -1149,7 +1133,7 @@ export default function App() {
   return (
     <div style={S.app}>
       <a ref={downloadRef} style={{ display: "none" }} />
-      <PrintCover project={project} voltage={voltage} hpVoltage={hpVoltage}
+      <PrintCover project={project} voltage={voltage}
         totalKVA={totalKVA} totalAmps={totalAmps} buildingCount={project.buildings} />
 
       <div style={S.hdr} data-print-hide data-r-hdr>
@@ -1184,7 +1168,7 @@ export default function App() {
             </div>
           </div>
 
-          <SettingsPanel voltage={voltage} setVoltage={setVoltage} hpVoltage={hpVoltage} setHpVoltage={setHpVoltage}
+          <SettingsPanel voltage={voltage} setVoltage={setVoltage}
             categories={categories} setCategories={setCategories} tenants={tenants} setTenants={setTenants} />
 
           {allBuildings.map((b) => {
@@ -1326,12 +1310,8 @@ export default function App() {
           </div>
           <div style={{ ...S.rg2(bp.mobile), marginBottom: 14 }}>
             <div style={{ ...S.stat, textAlign: "left", display: "flex", gap: 12, alignItems: "center", justifyContent: "center" }} data-r-stat>
-              <span style={{ fontSize: 9, color: C.muted, letterSpacing: 2, textTransform: "uppercase" }}>Tenant Voltage:</span>
+              <span style={{ fontSize: 9, color: C.muted, letterSpacing: 2, textTransform: "uppercase" }}>Global Voltage:</span>
               <span style={{ color: C.amber, fontWeight: "bold", fontSize: 14 }}>{voltage.label}</span>
-            </div>
-            <div style={{ ...S.stat, textAlign: "left", display: "flex", gap: 12, alignItems: "center", justifyContent: "center" }} data-r-stat>
-              <span style={{ fontSize: 9, color: C.muted, letterSpacing: 2, textTransform: "uppercase" }}>House Panel Voltage:</span>
-              <span style={{ color: C.amber, fontWeight: "bold", fontSize: 14 }}>{hpVoltage.label}</span>
             </div>
           </div>
 
