@@ -806,7 +806,7 @@ function WirewayRulesCard({ wirewayRules, setWirewayRules, tapCanIn, setTapCanIn
                   <td style={S.td}>—</td>
                   <td style={S.td}>
                     <input style={{ ...S.inp, width: 50 }} type="number" value={tapCanIn}
-                      onChange={(e) => setTapCanIn(Number(e.target.value))} />
+                      onChange={(e) => setTapCanIn(Number(e.target.value) || 0)} />
                   </td>
                 </>
               ) : (
@@ -889,7 +889,7 @@ export default function App() {
       return 0;
     });
     const tenantsIn = slots.reduce((s, t) => s + t.slot.totalIn, 0);
-    const totalIn = tapCanIn + POST_TAP_GAP + tenantsIn;
+    const totalIn = Number(tapCanIn) + POST_TAP_GAP + tenantsIn;
     const totalFt = totalIn / 12;
     const availFt = Number(wireway.availableWallFeet) || 0;
     return {
@@ -967,7 +967,7 @@ export default function App() {
         if (d.categories) setCategories(d.categories.map((c) => ({ ...c, id: uid() })));
         if (d.tenants) setTenants(d.tenants.map((t) => ({ ...t, id: uid() })));
         if (d.wireway) setWireway(d.wireway);
-        if (d.tapCanIn !== undefined) setTapCanIn(d.tapCanIn);
+        if (d.tapCanIn !== undefined) setTapCanIn(Number(d.tapCanIn));
         if (d.wirewayRules) setWirewayRules(d.wirewayRules.map((r) => ({ ...r, id: uid() })));
         setScreen("editor");
       } catch { /* silent */ }
@@ -1262,7 +1262,7 @@ export default function App() {
                         <td style={{ ...S.td, color: C.purple, fontWeight: "bold" }}>Tap Can</td>
                         <td style={S.td}>—</td><td style={S.td}>—</td>
                         <td style={{ ...S.td, color: C.muted, fontSize: 10 }}>Fixed at start</td>
-                        <td style={{ ...S.td, color: C.purple, fontWeight: "bold" }}>30"</td>
+                        <td style={{ ...S.td, color: C.purple, fontWeight: "bold" }}>{tapCanIn}"</td>
                       </tr>
                       <tr>
                         <td style={{ ...S.td, color: C.muted }}>Gap</td>
@@ -1287,7 +1287,7 @@ export default function App() {
                       })}
                       <tr style={{ background: C.raised, borderTop: `2px solid ${C.border}` }}>
                         <td colSpan={3} style={{ ...S.td, color: C.muted, fontSize: 9, letterSpacing: 2 }}>TOTAL WALL SPACE NEEDED</td>
-                        <td style={{ ...S.td, color: C.muted, fontSize: 10 }}>30" (tap) + {POST_TAP_GAP}" (gap) + {bw.tenantsIn}" (tenants)</td>
+                        <td style={{ ...S.td, color: C.muted, fontSize: 10 }}>{tapCanIn}" (tap) + {POST_TAP_GAP}" (gap) + {bw.tenantsIn}" (tenants)</td>
                         <td style={{
                           ...S.td, fontWeight: "bold", fontSize: 13,
                           color: bw.availFt > 0 ? (bw.ok ? C.green : C.red) : C.amber
