@@ -266,9 +266,15 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tap
       pushT({ w: sl.gapIn * scale, kind: "gap", col: "transparent" });
     } else {
       // Side by side: meter + divider + disconnect
-      pushT({ w: sl.meterIn * scale, kind: "meter-only", label: "METER", sub: `${sl.meterIn}"`, col: C.green });
-      pushT({ w: sl.divIn * scale, kind: "gap", col: "transparent" });
-      pushT({ w: sl.disconnectIn * scale, kind: "equip", label: ts.name || ts.category, sub: `${sl.disconnectIn}"`, col: C.amber, serviceSize: ts.serviceSize, showMeter: false });
+      // Compute combined width to center the service label
+      const meterW = sl.meterIn * scale;
+      const divW = sl.divIn * scale;
+      const discW = sl.disconnectIn * scale;
+      const groupW = meterW + divW + discW;         // total width of this service group
+      const groupLabel = ts.name || ts.category;    // service name
+      pushT({ w: meterW, kind: "meter-only", label: "METER", sub: `${sl.meterIn}"`, col: C.green, groupLabel, groupW, groupStartRx: tx });
+      pushT({ w: divW, kind: "gap", col: "transparent", isSbsDiv: true });  // divider between meter and disc
+      pushT({ w: discW, kind: "equip", label: groupLabel, sub: `${sl.disconnectIn}"`, col: C.amber, serviceSize: ts.serviceSize, showMeter: false, isSecondaryLabel: true });
       pushT({ w: sl.gapIn * scale, kind: "gap", col: "transparent" });
     }
   });
@@ -322,7 +328,7 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tap
           const cx = sx + seg.w / 2;
 
           if (seg.kind === "gap") {
-            const gapTop = TOP_Y;
+            const gapTop = seg.isSbsDiv ? BOT_Y : TOP_Y;  // dividers between meter/disc only span box height
             const gapBot = CHAN_Y;
             return (
               <g key={i}>
@@ -345,8 +351,9 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tap
 
             return (
               <g key={i}>
-                {/* ── Tenant name above everything ── */}
-                {!isSmall && (
+                {/* ── Tenant name: centered across full group (meter+div+disc) — only on the first segment (meter-only) ── */}
+                {/* (rendered in meter-only block below for side-by-side, here only for stacked) */}
+                {!isSmall && !seg.isSecondaryLabel && (
                   <text x={cx} y={LBL_Y + 8}
                     fill={C.text} fontSize={Math.min(seg.w / 6, 8)} fontWeight="bold" textAnchor="middle">{seg.label}</text>
                 )}
@@ -359,7 +366,9 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tap
                   stroke={seg.col} strokeWidth={2} strokeLinecap="round" />
                 {!isSmall && (
                   <text x={cx} y={discTop - 2}
-                    fill={seg.col} fontSize={6} fontWeight="bold" textAnchor="middle" letterSpacing={0.3}>DISCONNECT SW.</text>
+                    fill={seg.col} fontSize={6} fontWeight="bold" textAnchor="middle" letterSpacing={0.3}>
+                    {seg.isSecondaryLabel ? "DISC. SW." : "DISCONNECT SW."}
+                  </text>
                 )}
 
                 {/* ── METER box (only for stacked / showMeter) ── */}
@@ -395,18 +404,28 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tap
           if (seg.kind === "meter-only") {
             // Standalone meter (for side-by-side layouts) — aligned with disconnect row
             const circR = Math.min(seg.w / 3, 14);
+            // Center the service group label across the full group width (meter + divider + disconnect)
+            const groupCx = seg.groupStartRx !== undefined
+              ? CHAN_X + seg.groupStartRx + seg.groupW / 2
+              : cx;
             return (
               <g key={i}>
+                {/* Service name centered across the whole group */}
+                {!isSmall && seg.groupLabel && (
+                  <text x={groupCx} y={BOT_Y - 10}
+                    fill={C.text} fontSize={Math.min(seg.groupW / 6, 8)} fontWeight="bold" textAnchor="middle">{seg.groupLabel}</text>
+                )}
+                {/* METER label above meter box */}
+                {!isSmall && (
+                  <text x={cx} y={BOT_Y - 2}
+                    fill={C.green} fontSize={6} fontWeight="bold" textAnchor="middle" letterSpacing={0.3}>METER</text>
+                )}
                 <rect x={sx + 1} y={BOT_Y} width={seg.w - 2} height={BOX_H}
                   fill={C.green} fillOpacity={0.08} stroke={C.green} strokeWidth={1.5} rx={1} />
-                <circle cx={cx} cy={BOT_Y + BOX_H * 0.42} r={circR}
+                <circle cx={cx} cy={BOT_Y + BOX_H * 0.5} r={circR}
                   fill="none" stroke={C.green} strokeWidth={1.5} />
-                <circle cx={cx} cy={BOT_Y + BOX_H * 0.42} r={2}
+                <circle cx={cx} cy={BOT_Y + BOX_H * 0.5} r={2}
                   fill={C.green} fillOpacity={0.6} />
-                {!isSmall && (
-                  <text x={cx} y={BOT_Y + BOX_H - 3}
-                    fill={C.green} fontSize={6} fontWeight="bold" textAnchor="middle" letterSpacing={1}>METER</text>
-                )}
                 <line x1={cx} y1={BOT_Y + BOX_H} x2={cx} y2={CHAN_Y}
                   stroke={C.green} strokeWidth={1} strokeOpacity={0.4} />
               </g>
