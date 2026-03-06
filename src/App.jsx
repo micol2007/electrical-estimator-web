@@ -64,13 +64,13 @@ const BLANK_WIREWAY = { availableWallFeet: "" };
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 const C = {
-  bg: "#060e1a",
-  surface: "#0b1828",
-  raised: "#0f2035",
-  border: "#1a3350",
+  bg: "#0e1c30",
+  surface: "#162840",
+  raised: "#1c344f",
+  border: "#2a4e72",
   borderB: "#f59e0b",
-  text: "#c8d8e8",
-  muted: "#456",
+  text: "#ddeeff",
+  muted: "#7fa8c9",
   amber: "#f59e0b",
   blue: "#38bdf8",
   green: "#4ade80",
@@ -498,9 +498,9 @@ function PrintCover({ project, voltage, totalKVA, totalAmps, buildingCount }) {
 const readVal = { color: C.text, fontSize: 12, fontFamily: "monospace", letterSpacing: 0.5 };
 const readMuted = { color: C.muted, fontSize: 11, fontFamily: "monospace" };
 const editBtn = (editing) => ({
-  background: editing ? C.green : "transparent",
-  color: editing ? "#000" : C.muted,
-  border: `1px solid ${editing ? C.green : C.border}`,
+  background: editing ? C.green : "rgba(245,158,11,0.12)",
+  color: editing ? "#000" : C.amber,
+  border: `1px solid ${editing ? C.green : C.amber}`,
   padding: "4px 12px", cursor: "pointer", fontFamily: "monospace",
   fontSize: 10, fontWeight: "bold", letterSpacing: 1, borderRadius: 2,
   transition: "all .15s",
