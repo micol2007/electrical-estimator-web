@@ -471,7 +471,7 @@ function PrintCover({ project, voltage, totalKVA, totalAmps, buildingCount }) {
   return (
     <div data-print-only style={{ display: "none", pageBreakAfter: "always", padding: 40, textAlign: "center" }}>
       <div style={{ fontSize: 36, marginBottom: 20 }}>⚡</div>
-      <h1 style={{ fontSize: 28, letterSpacing: 4, marginBottom: 8 }}>ELECTRICAL ESTIMATE</h1>
+      <h1 style={{ fontSize: 28, letterSpacing: 4, marginBottom: 8 }}>SHELL BUILDING ELECTRICAL ESTIMATIONS</h1>
       <h2 style={{ fontSize: 18, fontWeight: "normal", marginBottom: 40 }}>{project.name || "Untitled"}</h2>
       <table style={{ margin: "0 auto", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
         <tbody>
@@ -488,7 +488,7 @@ function PrintCover({ project, voltage, totalKVA, totalAmps, buildingCount }) {
         </tbody>
       </table>
       <div style={{ marginTop: 60, fontSize: 10, color: "#999" }}>
-        Generated {new Date().toLocaleDateString()} — ELEC-ESTIMATOR
+        Generated {new Date().toLocaleDateString()} — SHELL BUILDING ELECTRICAL ESTIMATIONS
       </div>
     </div>
   );
@@ -913,7 +913,7 @@ export default function App() {
   const handleExcel = useCallback(() => {
     const wb = XLSX.utils.book_new();
     const rows = [
-      ["ELECTRICAL ESTIMATE"],
+      ["SHELL BUILDING ELECTRICAL ESTIMATIONS"],
       ["Project", project.name, "Number", project.number],
       ["Global Voltage", voltage.label, "Factor", voltage.factor],
       [],
@@ -1061,8 +1061,8 @@ export default function App() {
       // Open print window
       const win = window.open("", "_blank", "width=900,height=700");
       if (win) {
-        win.document.write('<!DOCTYPE html><html><head><title>Electrical Estimate - ' + (project.name || 'Print') + '</title><style>' + css + '</style></head><body>');
-        win.document.write('<h1>⚡ ELECTRICAL ESTIMATE</h1>');
+        win.document.write('<!DOCTYPE html><html><head><title>Shell Building Electrical Estimations - ' + (project.name || 'Print') + '</title><style>' + css + '</style></head><body>');
+        win.document.write('<h1>⚡ SHELL BUILDING ELECTRICAL ESTIMATIONS</h1>');
         win.document.write('<h2>' + (project.name || 'Untitled') + ' · ' + (project.number || '—') + '</h2>');
         win.document.write(html);
         win.document.write('</body></html>');
@@ -1087,11 +1087,11 @@ export default function App() {
   if (screen === "home") return (
     <div style={S.app}>
       <a ref={downloadRef} style={{ display: "none" }} />
-      <div style={S.hdr} data-r-hdr><div><div style={S.logo} data-r-logo>⚡ ELEC-ESTIMATOR</div></div></div>
+      <div style={S.hdr} data-print-hide data-r-hdr><div><div style={S.logo} data-r-logo>⚡ SHELL BUILDING ESTIMATIONS</div></div></div>
       <div style={{ ...S.main, maxWidth: 580, paddingTop: bp.mobile ? 32 : 56 }} data-r-main>
         <div style={{ textAlign: "center", marginBottom: bp.mobile ? 24 : 40 }}>
           <div style={{ fontSize: bp.mobile ? 32 : 42, marginBottom: 12 }}>⚡</div>
-          <h1 style={{ color: C.amber, fontSize: bp.mobile ? 18 : 24, margin: 0, letterSpacing: 4, fontWeight: "bold" }}>ELECTRICAL ESTIMATOR</h1>
+          <h1 style={{ color: C.amber, fontSize: bp.mobile ? 16 : 22, margin: 0, letterSpacing: 2, fontWeight: "bold" }}>SHELL BUILDING ELECTRICAL ESTIMATIONS</h1>
           <p style={{ color: C.muted, fontSize: 11, marginTop: 8, letterSpacing: 1 }}>KVA · AMPS · SERVICE SIZE · WIREWAY AUTO-CALC</p>
         </div>
 
@@ -1138,7 +1138,7 @@ export default function App() {
 
       <div style={S.hdr} data-print-hide data-r-hdr>
         <div>
-          <div style={S.logo} data-r-logo>⚡ ELEC-ESTIMATOR</div>
+          <div style={S.logo} data-r-logo>⚡ SHELL BUILDING ESTIMATIONS</div>
           <div style={S.sub}>{project.name || "Untitled"} · {project.number || "—"}</div>
         </div>
         <div style={S.nav} data-r-nav>
