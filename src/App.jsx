@@ -280,7 +280,7 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tap
   // Layout Y
   const LBL_Y = 2;                                 // tenant name
   const BOX_H = 46;                                // equipment box height
-  const TOP_Y = 16;                                // top row (stacked disconnect)
+  const TOP_Y = 28;                                // top row (stacked disconnect)
   const BOX_GAP = 12;                              // gap between stacked boxes
   const BOT_Y = TOP_Y + BOX_H + BOX_GAP;           // bottom row (meter/side-by-side disconnect)
   const CONN_GAP = 8;
@@ -358,8 +358,8 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tap
                 <line x1={cx} y1={discTop + BOX_H} x2={cx} y2={discTop + BOX_H + 8}
                   stroke={seg.col} strokeWidth={2} strokeLinecap="round" />
                 {!isSmall && (
-                  <text x={cx} y={discTop + BOX_H / 2 + 3}
-                    fill={seg.col} fontSize={5} fontWeight="bold" textAnchor="middle" letterSpacing={0.3}>DISCONNECT SW.</text>
+                  <text x={cx} y={discTop - 2}
+                    fill={seg.col} fontSize={6} fontWeight="bold" textAnchor="middle" letterSpacing={0.3}>DISCONNECT SW.</text>
                 )}
 
                 {/* ── METER box (only for stacked / showMeter) ── */}
