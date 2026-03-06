@@ -424,9 +424,9 @@ function WirewayDiagram({ tenantSlots, totalIn, totalFt, availFt, totalAmps, tap
                 )}
                 <rect x={sx + 1} y={BOT_Y} width={seg.w - 2} height={BOX_H}
                   fill={C.green} fillOpacity={0.08} stroke={C.green} strokeWidth={1.5} rx={1} />
-                <circle cx={cx} cy={BOT_Y + BOX_H * 0.5} r={circR}
+                <circle cx={cx} cy={BOT_Y + BOX_H * 0.38} r={circR}
                   fill="none" stroke={C.green} strokeWidth={1.5} />
-                <circle cx={cx} cy={BOT_Y + BOX_H * 0.5} r={2}
+                <circle cx={cx} cy={BOT_Y + BOX_H * 0.38} r={2}
                   fill={C.green} fillOpacity={0.6} />
                 <line x1={cx} y1={BOT_Y + BOX_H} x2={cx} y2={CHAN_Y}
                   stroke={C.green} strokeWidth={1} strokeOpacity={0.4} />
